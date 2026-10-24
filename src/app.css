@@ -1,0 +1,120 @@
+/* Tokens repris de MY OSM (app/src/styles/ui/base.css) : palette iOS / Apple Plans.
+   Le thème (auto / clair / sombre) est posé par App.tsx dans data-theme. */
+:root {
+  color-scheme: light;
+  --accent: #007aff;
+  --danger: #ff3b30;
+  --caution: #ff9500;
+  --mark: rgba(255, 204, 0, 0.45);
+  --text-primary: #1c1c1e;
+  --text-secondary: #8e8e93;
+  --background: #f2f2f7;
+  --surface: #ffffff;
+  --hairline: rgba(60, 60, 67, 0.12);
+  --hover: rgba(0, 0, 0, 0.04);
+  --selected: rgba(0, 122, 255, 0.12);
+  --fill: rgba(118, 118, 128, 0.12);
+  --radius-card: 20px;
+  --shadow-float: 0 10px 30px rgba(0, 0, 0, 0.16), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --accent: #0a84ff;
+  --danger: #ff453a;
+  --caution: #ff9f0a;
+  --mark: rgba(255, 214, 10, 0.4);
+  --text-primary: #f2f2f7;
+  --text-secondary: #98989f;
+  --background: #000000;
+  --surface: #1c1c1e;
+  --hairline: rgba(120, 120, 128, 0.28);
+  --hover: rgba(255, 255, 255, 0.07);
+  --selected: rgba(10, 132, 255, 0.24);
+  --fill: rgba(118, 118, 128, 0.24);
+  --shadow-float: 0 10px 30px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+button, select {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+input:not([type]), select { width: 100%; padding: 9px 12px; border: none; border-radius: 10px; background: var(--fill); color: var(--text-primary); font: inherit; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; overflow-wrap: anywhere; }
+
+.app { max-width: 760px; margin: 0 auto; padding: 24px 20px 40px; min-height: 100%; }
+.app.alarm { box-shadow: inset 0 0 0 6px var(--danger); animation: alarm 1s steps(2, jump-none) infinite; }
+@keyframes alarm { 50% { box-shadow: inset 0 0 0 6px transparent; } }
+h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; margin: 8px 4px 4px; }
+h2 { font-size: 22px; margin: 0 0 16px; }
+
+.card { background: var(--surface); border-radius: var(--radius-card); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.banner { display: flex; gap: 14px; align-items: flex-start; padding: 16px; margin-bottom: 16px; border-radius: var(--radius-card); background: var(--danger); color: #fff; animation: blink 1s steps(2, jump-none) infinite; }
+.banner strong { font-size: 18px; display: block; margin-bottom: 4px; }
+@keyframes blink { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .banner, .app.alarm { animation: none; } }
+
+.list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.empty { color: var(--text-secondary); text-align: center; padding: 24px; }
+.rule { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.rule.off { box-shadow: 0 0 0 2px var(--danger); }
+.rule.disabled .body { opacity: .45; }
+.rule button { padding: 8px; border-radius: 10px; color: var(--text-secondary); }
+.rule button:hover { background: var(--hover); }
+.grip { color: var(--text-secondary); cursor: grab; flex: none; }
+.body { flex: 1; min-width: 0; }
+.path { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; }
+.path span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chip { font-size: 13px; padding: 3px 9px; border-radius: 999px; background: var(--fill); color: var(--text-primary); }
+.chip.warn { background: var(--caution); color: #000; }
+.chip.toggle.on { background: var(--accent); color: #fff; }
+
+.primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 18px; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 600; }
+
+.switch { position: relative; width: 44px; height: 26px; flex: none; }
+.switch input { opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; position: absolute; z-index: 1; }
+.switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--fill); transition: background .2s; }
+.switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .2s; }
+.switch input:checked + span { background: #34c759; }
+.switch input:checked + span::after { transform: translateX(18px); }
+.switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.cats { padding: 14px 16px; }
+.cats summary { cursor: pointer; font-weight: 600; }
+.cats .field { margin-top: 12px; }
+
+.sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: center; padding: 16px; z-index: 10; }
+.sheet { width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 22px; box-shadow: var(--shadow-float); }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; font-size: 14px; color: var(--text-secondary); }
+.picker { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--fill); color: var(--text-primary); text-align: left; }
+.row { display: flex; gap: 8px; }
+.row select { width: 90px; }
+.check { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; font-size: 15px; }
+.check input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); }
+.actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.actions > button:not(.primary) { padding: 11px 16px; border-radius: 12px; color: var(--accent); }
+.files { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow: auto; }
+.files li { padding: 6px 0; border-bottom: 1px solid var(--hairline); }
+button:disabled { opacity: 0.4; cursor: default; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hint { color: var(--text-secondary); font-size: 14px; margin: 0 4px 12px; }
+.error { color: var(--danger); font-size: 14px; margin: 0 4px 12px; }
+.danger { color: var(--danger) !important; }
