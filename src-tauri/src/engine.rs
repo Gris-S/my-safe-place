@@ -212,6 +212,36 @@ fn trash(path: &Path) -> io::Result<()> {
     if ok { Ok(()) } else { Err(io::Error::other(format!("gio trash a échoué pour {}", path.display()))) }
 }
 
+/// Un lien vers `target` dans `dir`, en descendant jusqu'à `depth` niveaux.
+/// Les dossiers cachés (dont la corbeille ~/.local/share/Trash) sont ignorés :
+/// un lien mis à la corbeille compte bien comme supprimé.
+fn find_link(dir: &Path, target: &Path, depth: u32) -> Option<PathBuf> {
+    let mut subdirs = vec![];
+    for e in fs::read_dir(dir).ok()?.flatten() {
+        let Ok(ft) = e.file_type() else { continue };
+        if ft.is_symlink() && fs::read_link(e.path()).is_ok_and(|t| t == target) {
+            return Some(e.path());
+        }
+        // file_type ne suit pas les liens : pas de boucle possible.
+        if ft.is_dir() && depth > 0 && !e.file_name().to_string_lossy().starts_with('.') {
+            subdirs.push(e.path());
+        }
+    }
+    subdirs.iter().find_map(|d| find_link(d, target, depth - 1))
+}
+
+/// Où un lien déplacé a pu atterrir : le dossier perso, et le parent du départ
+/// s'il est ailleurs (autre disque).
+fn search_roots(source: &Path) -> Vec<PathBuf> {
+    let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_default();
+    let mut roots = vec![home.clone()];
+    let parent = source.parent().unwrap_or(source).to_path_buf();
+    if home.as_os_str().is_empty() || !parent.starts_with(&home) {
+        roots.push(parent);
+    }
+    roots
+}
+
 fn now() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
 }
@@ -282,10 +312,13 @@ impl Engine {
             match (link_ok, target_ok) {
                 (true, true) => true,
                 (false, true) => {
-                    // Lien renommé dans le même dossier : on le suit au lieu de supprimer.
-                    let moved = l.link.parent().and_then(|d| fs::read_dir(d).ok()).and_then(|rd| {
-                        rd.flatten().map(|e| e.path()).find(|p| fs::read_link(p).is_ok_and(|t| t == l.target))
-                    });
+                    // Lien renommé ou déplacé : on le suit au lieu de supprimer. On ne
+                    // fouille tout le dossier perso que si une suppression est en jeu.
+                    let dir = l.link.parent().unwrap_or(Path::new("/"));
+                    let mut moved = find_link(dir, &l.target, 0);
+                    if moved.is_none() && rule.delete_follows {
+                        moved = search_roots(dir).iter().find_map(|r| find_link(r, &l.target, 8));
+                    }
                     if let Some(p) = moved {
                         l.link = p;
                         return true;
@@ -483,6 +516,29 @@ mod tests {
         e.tick();
         assert!(d.join("dst/a.pdf").exists());
         assert!(e.links.is_empty());
+    }
+
+    #[test]
+    fn delete_follows_spares_a_moved_link() {
+        let d = tmp("moved");
+        let mut r = rule(&d);
+        r.delete_follows = true;
+        let mut e = engine(r);
+        old_file(&d.join("src/a.pdf"), "a");
+        settle(&mut e);
+        fs::create_dir_all(d.join("ailleurs/sous")).unwrap();
+        fs::rename(d.join("src/a.pdf"), d.join("ailleurs/sous/a.pdf")).unwrap();
+        e.tick();
+        assert!(d.join("dst/a.pdf").exists(), "lien déplacé : le vrai fichier reste");
+        assert!(e.links[0].link.ends_with("ailleurs/sous/a.pdf"), "le lien est suivi");
+
+        // Mis à la corbeille (dossier caché) : là, c'est une vraie suppression.
+        fs::create_dir_all(d.join(".Trash/files")).unwrap();
+        fs::rename(d.join("ailleurs/sous/a.pdf"), d.join(".Trash/files/a.pdf")).unwrap();
+        let (s, _) = e.tick();
+        // /tmp (tmpfs) n'a pas de corbeille : gio refuse, mais la mise à la corbeille a bien été tentée.
+        let tried = s.last_error.is_some_and(|m| m.contains("gio trash"));
+        assert!(tried || !d.join("dst/a.pdf").exists(), "le vrai fichier part à la corbeille");
     }
 
     #[test]

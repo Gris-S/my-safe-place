@@ -89,8 +89,9 @@ la fenêtre dans [`src/App.tsx`](src/App.tsx).
 
 - Le moteur regarde les dossiers toutes les 2 secondes (pas d'inotify).
 - Seuls les fichiers à la racine du dossier de départ sont concernés, pas les sous-dossiers.
-- Avec **suppr = suppr**, déplacer un lien vers un *autre* dossier compte comme
-  une suppression : le vrai fichier part à la corbeille (récupérable).
+- Avec **suppr = suppr**, un lien déplacé est retrouvé dans le dossier perso
+  (8 niveaux, hors dossiers cachés). Déplacé hors du dossier perso ou plus
+  profond, il compte comme supprimé : le vrai fichier part à la corbeille (récupérable).
 
 ## Licence
 
