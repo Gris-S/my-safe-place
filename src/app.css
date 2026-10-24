@@ -108,7 +108,7 @@ h2 { font-size: 22px; margin: 0 0 16px; }
 .row { display: flex; gap: 8px; }
 .row select { width: 90px; }
 .check { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; font-size: 15px; }
-.check input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); }
+.check input { flex: none; margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); }
 .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 .actions > button:not(.primary) { padding: 11px 16px; border-radius: 12px; color: var(--accent); }
 .files { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow: auto; }

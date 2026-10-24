@@ -178,7 +178,12 @@ pub fn move_and_link(src: &Path, target_dir: &Path) -> io::Result<PathBuf> {
         let _ = fs::remove_file(&tmp);
         return Err(e);
     }
-    fs::remove_file(src)?;
+    // Original impossible à enlever : on retire la copie, sinon chaque tour en
+    // referait une nouvelle (doc (1), doc (2)…) jusqu'à remplir la cible.
+    if let Err(e) = fs::remove_file(src) {
+        let _ = fs::remove_file(&dest);
+        return Err(e);
+    }
     std::os::unix::fs::symlink(&dest, src)?;
     Ok(dest)
 }
@@ -322,7 +327,13 @@ impl Engine {
 
 /// Complète une règle neuve et refuse ce qui serait dangereux.
 pub fn prepare_rule(mut r: Rule) -> Result<Rule, String> {
-    r.source = fs::canonicalize(&r.source).map_err(|_| "dossier de départ introuvable")?;
+    // Une règle déjà enregistrée garde son départ même s'il est absent : sinon
+    // un seul départ débranché empêcherait de toucher aux autres règles.
+    match fs::canonicalize(&r.source) {
+        Ok(p) => r.source = p,
+        Err(_) if r.created_at != 0 => {}
+        Err(_) => return Err("dossier de départ introuvable".into()),
+    }
     if r.mount.as_os_str().is_empty() {
         r.target = fs::canonicalize(&r.target).map_err(|_| "dossier cible introuvable (disque branché ?)")?;
         r.mount = mount_of(&r.target);
@@ -472,6 +483,21 @@ mod tests {
         e.tick();
         assert!(d.join("dst/a.pdf").exists());
         assert!(e.links.is_empty());
+    }
+
+    #[test]
+    fn undeletable_original_leaves_no_copy_behind() {
+        use std::os::unix::fs::PermissionsExt;
+        let d = tmp("ro");
+        let mut e = engine(rule(&d));
+        old_file(&d.join("src/doc.pdf"), "x");
+        fs::set_permissions(d.join("src"), fs::Permissions::from_mode(0o555)).unwrap();
+        let s = settle(&mut e);
+        e.tick();
+        fs::set_permissions(d.join("src"), fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(s.last_error.is_some());
+        assert_eq!(fs::read_dir(d.join("dst")).unwrap().count(), 0, "pas de copies en double");
+        assert!(d.join("src/doc.pdf").symlink_metadata().unwrap().is_file());
     }
 
     #[test]
